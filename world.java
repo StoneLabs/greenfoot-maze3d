@@ -9,7 +9,9 @@ import java.awt.Color;
  */
 public class world extends World
 {
-    public final int VPw = 1620, VPh = 860; /** TRUE 16x9 */
+    public final int VPw = 1080, VPh = 640; /** TRUE 16x9 */
+    public final double texRes = 10;
+    public final int texWidth = (int)(VPw/texRes), texHeight = (int)(VPh/texRes);
     
     public int[][] map = new int[][]
     {
@@ -50,11 +52,31 @@ public class world extends World
     
     long oldTime = 0;
     
+    int[][][] textures = new int[8][texWidth][texHeight];
+    
     public world()
     {    
         // Create a new world with 600x100 cells with a cell size of 1x1 pixels.
-        super(1620, 860, 1); 
+        super(1080, 640, 1); 
         oldTime = System.nanoTime();
+        
+        //generate some textures
+        for(int x = 0; x < texWidth; x++)
+            for(int y = 0; y < texHeight; y++)
+            {
+                int xorcolor = (x * 256 / texWidth) ^ (y * 256 / texHeight);
+                //int xcolor = x * 256 / texWidth;
+                int ycolor = y * 256 / texHeight;
+                int xycolor = y * 128 / texHeight + x * 128 / texWidth;
+                textures[0][x][y] = (x % 16 == y % 16 ? 0x000000 : 0xFF00FF); //flat red texture with black cross
+                textures[1][x][y] = (int)(Math.sin(x) * 0xFFFFFF); //sloped greyscale
+                textures[2][x][y] = 256 * xycolor + 65536 * xycolor; //sloped yellow gradient
+                textures[3][x][y] = xorcolor + 256 * xorcolor + 65536 * xorcolor; //xor greyscale
+                textures[4][x][y] = 256 * xorcolor; //xor green
+                textures[5][x][y] = (x % 16 == 0 || y % 16 == 0 ? 0x000000 : 0xFF0000); //red bricks
+                textures[6][x][y] = 65536 * ycolor; //red gradient
+                textures[7][x][y] = Greenfoot.getRandomNumber(0xFFFFFF); //flat grey texture
+            }
     }
     
     public void act()
@@ -68,18 +90,23 @@ public class world extends World
         double calMoveSpeed = moveSpeed * dTime * 0.0000000025;
         double calRotSpeed = rotSpeed * dTime * 0.0000000025;
         
+        double newX = posX;
+        double newY = posY;
         //move forward if no wall in front of you
         if (Greenfoot.isKeyDown("up"))
         {
-          if(map[(int)(posX + dirX * calMoveSpeed)][(int)posY] == 0) posX += dirX * calMoveSpeed;
-          if(map[(int)posX][(int)(posY + dirY * calMoveSpeed)] == 0) posY += dirY * calMoveSpeed;
+          newX = (posX + dirX * calMoveSpeed);
+          newY = (posY + dirY * calMoveSpeed);
         }
         //move backwards if no wall behind you
         if (Greenfoot.isKeyDown("down"))
         {
-          if(map[(int)(posX - dirX * calMoveSpeed)][(int)posY] == 0) posX -= dirX * calMoveSpeed;
-          if(map[(int)posX][(int)(posY - dirY * calMoveSpeed)] == 0) posY -= dirY * calMoveSpeed;
+          newX = (posX - dirX * calMoveSpeed);
+          newY = (posY - dirY * calMoveSpeed);
         }
+        
+        if(newX >= 0 && newX < mapWidth  && map[(int)newX][(int)posY] == 0) posX = newX;
+        if(newY >= 0 && newY < mapHeight && map[(int)posX][(int)newY] == 0) posY = newY;
         //rotate to the right
         if (Greenfoot.isKeyDown("right"))
         {
@@ -203,24 +230,39 @@ public class world extends World
             int drawEnd = lineHeight / 2 + VPh / 2;
             if(drawEnd >= VPh)drawEnd = VPh - 1;
             
-            Color color;
-            switch(map[mapX][mapY])
-            {
-                case 1:  color = Color.RED;     break; //red
-                case 2:  color = Color.GREEN;   break; //green
-                case 3:  color = Color.BLUE;    break; //green
-                case 4:  color = Color.MAGENTA; break; //green
-                default: color = Color.YELLOW;  break; //yellow
-            }
-            //give x and y sides different brightness
-            if (side == 1) {color = color.darker();}
+            int texNum = map[mapX][mapY] - 1; //0 is empty space but tex0 is defined!
             
+            //calculate value of wallX
+            double wallX; //where exactly the wall was hit
+            if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
+            else           wallX = rayPosX + perpWallDist * rayDirX;
+            wallX -= Math.floor((wallX));
+
+            //x coordinate on the texture
+            int texX = (int)(wallX * (double)texWidth);
+            if(side == 0 && rayDirX > 0) texX = texWidth - texX - 1;
+            if(side == 1 && rayDirY < 0) texX = texWidth - texX - 1;
+            
+            for(int y = drawStart; y<drawEnd; y++)
+            {
+                int d = y * 256 - VPh * 128 + lineHeight * 128;  //256 and 128 factors to avoid floats
+                int texY = ((d * texHeight) / lineHeight) / 256;
+                if (texX < 0) texX = 0; if (texX > texWidth)  texX = texWidth;
+                if (texY < 0) texY = 0; if (texY > texHeight) texX = texHeight;
+                int colorCode = textures[texNum][texX][texY];
+                Color color = new Color(colorCode);
+                if(side == 1) color = color.darker();//(colorCode >> 1) & 8355711; //011111...
+                img.setColorAt(x, y, color);
+            }
             
             //draw the pixels of the stripe as a vertical line
-            img.setColor(color);
-            img.drawLine(x, drawStart, x, drawEnd);
+            //img.drawLine(x, drawStart, x, drawEnd);
         }
         
+        //set greenfoot background image //AA IS NOT WORKING !! //
+        int antiAliasingFactor = 1; //Antialiasing via scale down 'n' up
+        img.scale(VPw/antiAliasingFactor, VPh/antiAliasingFactor);
+        img.scale(VPw, VPh);
         this.setBackground(img);
     }
 }
