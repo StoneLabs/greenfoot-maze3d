@@ -46,7 +46,7 @@ public class world extends World
         tmp.put(0xFF000080, 0x04);
         tmp.put(0xFF8000FF, 0x05);
         tmp.put(0xFFFF00FF, 0x06);
-        tmp.put(0xFF804000, 0x07);
+        tmp.put(0xFFFF4000, 0x07);
         tmp.put(0xFF00FF00, 0x08);
         wallCodes = Collections.unmodifiableMap(tmp);
         
