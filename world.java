@@ -35,9 +35,6 @@ public class world extends World
     public static final Map<Integer, Integer> wallCodes;
     private static final int[][][] textures = new int[texAmnt][texWidth][texHeight];
     static {
-        System.out.println("\fWorking Directory = " +
-              System.getProperty("user.dir"));
-              
         Map<Integer, Integer> tmp = new HashMap<Integer, Integer>();
         tmp.put(0xFFFFFFFF, 0x00);
         tmp.put(0xFF000000, 0x01);
@@ -118,8 +115,8 @@ public class world extends World
           newY = (posY - dirY * calMoveSpeed);
         }
         
-        if(newX >= 0 && newX < mapWidth  && map[(int)newX][(int)posY] == 0) posX = newX;
-        if(newY >= 0 && newY < mapHeight && map[(int)posX][(int)newY] == 0) posY = newY;
+        if(newX >= 0 && newX < mapWidth  && (map[(int)newX][(int)posY] == 0 || map[(int)newX][(int)posY] == 8)) posX = newX;
+        if(newY >= 0 && newY < mapHeight && (map[(int)posX][(int)newY] == 0 || map[(int)newX][(int)posY] == 8)) posY = newY;
         //rotate to the right
         if (Greenfoot.isKeyDown("right"))
         {
@@ -142,6 +139,8 @@ public class world extends World
           planeX = planeX * Math.cos(calRotSpeed) - planeY * Math.sin(calRotSpeed);
           planeY = oldPlaneX * Math.sin(calRotSpeed) + planeY * Math.cos(calRotSpeed);
         }
+        
+        if (map[(int)newX][(int)posY] == 8) showText("TODO: TRIGGER WINNING EVENT", VPw / 2, 30);
         
         render();
         showText("FPS/UPS: "+fps, 75, 30);
