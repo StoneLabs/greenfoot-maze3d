@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Point;
+import java.io.File;
 
 /**
  * Write a description of class menu_levelSelection here.
@@ -15,12 +16,16 @@ import java.awt.Point;
 public class menu_levelSelection extends World
 {
     Button myButton;
+    Button myButtonBack;
     ListBox myList;
-    
-    static {
-        System.out.println("\fWorking Directory = " +
-              System.getProperty("user.dir"));
-            }  
+            
+    static String stripExtension (String str) {
+        if (str == null) return null;
+        
+        int pos = str.lastIndexOf(".");
+        if (pos == -1) return str;
+        return str.substring(0, pos);
+    }
     
     public menu_levelSelection()
     {    
@@ -30,10 +35,14 @@ public class menu_levelSelection extends World
         setPaintOrder(GUI_Component.class);
         showText("Select a level to play!", world.VPw / 2, 20);
         
-        ArrayList<String> strs2 = new ArrayList<String>(){{for (int i = 0; i < 100; i++) add(""+i);}};
+        final File[] files = new File("level").listFiles();
+        ArrayList<String> strs2 = new ArrayList<String>(){{for (File f : files) if (f.getName().contains(".bmp")) add(stripExtension(f.getName()));}};
         // Initialize ListBox with size and ArrayList of Strings
         myList = new ListBox(new Point(world.VPw / 6, world.VPh / 8 * 2), strs2);
         addObject(myList, world.VPw / 2, world.VPh / 8 * 2);
+        
+        myButtonBack = new Button("Back", new Point(world.VPw / 6, 30));
+        addObject(myButtonBack, world.VPw / 2, world.VPh / 32 * 3);
         
         myButton = new Button("Play", new Point(world.VPw / 6, 30));
         addObject(myButton, world.VPw / 2, world.VPh / 16 * 7);
@@ -47,7 +56,12 @@ public class menu_levelSelection extends World
         if (myButton.wasClicked())
         {
             System.out.println("Selected: " + myList.getSelection());
-            Greenfoot.setWorld(new world("01"));
+            if (myList.getSelection().size() == 1)
+                Greenfoot.setWorld(new world(myList.getSelection().get(0).toString()));
+        }
+        if (myButtonBack.wasClicked())
+        {
+            Greenfoot.setWorld(new menu_main());
         }
     }
 }

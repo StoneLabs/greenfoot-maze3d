@@ -1,0 +1,82 @@
+0.9.6.3
+-------
+* Release Candidate 3.
+* Pre-release cleanups.
+* Fixed saving primary and secondary colors after swapping them.
+
+0.9.6.2
+-------
+* Release Candidate 2.
+* Fixed startup error messages on XP systems with DWMAPI.DLL existing in the
+system directory.
+* The AltGr key is now working.
+* Changed keyboard shortcuts so the Ctrl+Alt key combination is not used to avoid
+interference with the AltGr key.
+
+0.9.6.1
+-------
+* Release Candidate 1.
+* Enabled unlocking 4-bit palettes, so they can be generated automatically.
+* Fixed issue with preview update in dynamic palette mode.
+
+0.9.6
+-----
+* Added drag-and-drop support for opening and importing files.
+* Added a predefined swatch set with web-safe colors.
+* Improved clipboard handling.
+* Improved quality of lines drawn by the Pencil and Eraser tools.
+* Updated application icons.
+
+0.9.5.2
+-------
+* Updated application icons.
+
+0.9.5.1
+-------
+* Updated application icons.
+
+0.9.5
+-----
+* Performance improvements.
+* Fixed potential problems with 32-bit ICO files created by the Windows DIB export plugin.
+* Added a "Keep ratio" option to the "Image properties" dialog.
+* Images with a "Not for export" status are now flagged in the image list.
+* Layer opacity and supersampling status are now visible in the layer list.
+* Dropped support for Windows 9x/ME and NT4.
+* New application icons.
+
+0.9
+---
+* Added documentation.
+* The "Options" dialog is now functional.
+* Swatch sets can be saved to file and loaded back.
+* In the ICO format export dialog, the "Optimize" option renamed to "Multipass".
+* Fixed rare creation of damaged project files.
+
+0.8.2.1
+-------
+* Fixed occasional crash on off-image drawing attempt.
+
+0.8.2
+-----
+* The Text tool is now functional.
+* Added a "Crop to Selection" command to the "Image" menu.
+* Added hints in the status bar.
+* Introduced limit for supersampled layer size.
+* The "n:1" scale indicators replaced with "n00%" ones.
+* The Escape key now resets the keyboard focus in the main window.
+* Fixed reading of some grayscale PNG images.
+
+0.8.1
+-----
+* Added "Flip" and "Rotate" commands to the "Image" menu.
+* Added a "Match clipboard" option to the "New project" and "New image" dialogs.
+* Added menu items and keyboard shortcuts for the image list navigation.
+* The "Ok" button in the "New image" dialog is now disabled when you select the
+borrowing option without selecting an image to borrow from.
+* Changed image size threshold (from 48x48 to 128x128) for PNG compression in
+Windows icons.
+
+0.8
+---
+First public release

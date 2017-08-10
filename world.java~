@@ -18,8 +18,8 @@ public class world extends World
     public static final int texWidth = 64, texHeight = 64;
     
     private int[][] map;
-    private int mapHeight;
-    private int mapWidth;
+    public int mapHeight;
+    public int mapWidth;
     
     private double posX = 22.0, posY = 15.5;         /**X any X as the player position vector     */
     private double dirX = -1.0, dirY = 0.0;          /**Rx and Ry as the players rotation vector  */
@@ -32,12 +32,13 @@ public class world extends World
     
     private long oldTime = 0;
     
+    GreenfootImage weapon = new GreenfootImage("textures\\weapon.png");
+    GreenfootImage weaponEase = new GreenfootImage("textures\\weapon.png");
+    GreenfootImage weaponAtac = new GreenfootImage("textures\\weapon_shoot.png");
+    
     public static final Map<Integer, Integer> wallCodes;
     private static final int[][][] textures = new int[texAmnt][texWidth][texHeight];
     static {
-        System.out.println("\fWorking Directory = " +
-              System.getProperty("user.dir"));
-              
         Map<Integer, Integer> tmp = new HashMap<Integer, Integer>();
         tmp.put(0xFFFFFFFF, 0x00);
         tmp.put(0xFF000000, 0x01);
@@ -79,19 +80,21 @@ public class world extends World
         for (int x = 0; x < level.getWidth(); x++)
             for (int y = 0; y < level.getHeight(); y++)
             {
-                if (level.getRGB(x, y) == 0xFFFFFF80) {posX = x; posY = y; map[x][y] = 0x00; continue;}
+                if (level.getRGB(x, y) == 0xFFFFFF80) {posX = x + 0.5; posY = y + 0.5; map[x][y] = 0x00; continue;}
                 Integer wallCode = wallCodes.get(level.getRGB(x, y));
                 if (wallCode == null)
                     System.out.println("Invalid code: " + Integer.toHexString(level.getRGB(x, y)));
                 map[x][y] = wallCode == null ? 0 : wallCode;
             }
                 
-        mapHeight = map.length;
-        mapWidth  = map[0].length;
+        mapHeight = map[0].length;
+        mapWidth  = map.length;
         
+        Greenfoot.stop();
         Greenfoot.start();
     }
     
+    boolean lastTickSpaceDown = false;
     public void act()
     {
         /**** UPDATE ****/
@@ -119,7 +122,7 @@ public class world extends World
         }
         
         if(newX >= 0 && newX < mapWidth  && (map[(int)newX][(int)posY] == 0 || map[(int)newX][(int)posY] == 8)) posX = newX;
-        if(newY >= 0 && newY < mapHeight && (map[(int)posX][(int)newY] == 0 || map[(int)newX][(int)posY] == 8)) posY = newY;
+        if(newY >= 0 && newY < mapHeight && (map[(int)posX][(int)newY] == 0 || map[(int)posX][(int)newY] == 8)) posY = newY;
         //rotate to the right
         if (Greenfoot.isKeyDown("right"))
         {
@@ -143,7 +146,19 @@ public class world extends World
           planeY = oldPlaneX * Math.sin(calRotSpeed) + planeY * Math.cos(calRotSpeed);
         }
         
-        if (map[(int)newX][(int)posY] == 8) showText("TODO: TRIGGER WINNING EVENT", VPw / 2, 30);
+        if (!Greenfoot.isKeyDown("space")) weapon = weaponEase;
+        if (Greenfoot.isKeyDown("space") && !lastTickSpaceDown)
+        {
+            weapon = weaponAtac;
+            RayHit hit = cast(dirX, dirY);
+            if (hit.blockID == 7) //wood
+                map[hit.mapX][hit.mapY] = 0;
+        }
+        lastTickSpaceDown = Greenfoot.isKeyDown("space");
+        
+        if (Greenfoot.isKeyDown("escape")) Greenfoot.setWorld(new menu_main());
+        
+        if (map[(int)posX][(int)posY] == 8) Greenfoot.setWorld(new menu_win());
         
         render();
         showText("FPS/UPS: "+fps, 75, 30);
@@ -164,110 +179,39 @@ public class world extends World
         for(int x = 0; x < VPw; x++)
         {
             /** calculate ray position and direction */
-            double cameraX = 2 * x / (double)(VPw) - 1; /** x-coordinate in camera space */
-            double rayPosX = posX;
-            double rayPosY = posY;
+            double cameraX = 2 * x / (double)(VPw) - 1; /** x-coordinate in camera space (-1 ; 1) */
             double rayDirX = dirX + planeX * cameraX; /** Sum of dir Vector and a part of the plane vector */
             double rayDirY = dirY + planeY * cameraX;
             
-            /** which box of the map we're in */
-            int mapX = (int)rayPosX;
-            int mapY = (int)rayPosY;
-            
-            /** length of ray from current position to next x or y-side */
-            double sideDistX;
-            double sideDistY;
-            
-            /** length of ray from one x or y-side to next x or y-side */
-            double deltaDistX = Math.sqrt(1 + (rayDirY * rayDirY) / (rayDirX * rayDirX));
-            double deltaDistY = Math.sqrt(1 + (rayDirX * rayDirX) / (rayDirY * rayDirY));
-            double perpWallDist;
-            
-            /** what direction to step in x or y-direction (either +1 or -1) */
-            int stepX;
-            int stepY;
-            
-            int hit = 0; /** was there a wall hit?       */
-            int side = -1;    /** was a NS or a EW wall hit?  */
-            
-            /** calculate step and initial sideDist */
-            if (rayDirX < 0)
-            {
-                stepX = -1;
-                sideDistX = (rayPosX - mapX) * deltaDistX;
-            }
-            else
-            {
-                stepX = 1;
-                sideDistX = (mapX + 1.0 - rayPosX) * deltaDistX;
-            }
-            if (rayDirY < 0)
-            {
-                stepY = -1;
-                sideDistY = (rayPosY - mapY) * deltaDistY;
-            }
-            else
-            {
-                stepY = 1;
-                sideDistY = (mapY + 1.0 - rayPosY) * deltaDistY;
-            }
-            
-            while (hit == 0)
-            {
-                /** jump to next map square, OR in x-direction, OR in y-direction */
-                if (sideDistX < sideDistY)
-                {
-                    sideDistX += deltaDistX;
-                    mapX += stepX;
-                    side = 0;
-                }
-                else
-                {
-                    sideDistY += deltaDistY;
-                    mapY += stepY;
-                    side = 1;
-                }
-                //Check if ray has hit a wall
-                if (map[mapX][mapY] > 0) hit = 1;
-            } 
-            
-            if (side == -1) return; /** ERROR */
-            
-            /** Calculate distance projected on camera direction (oblique distance will give fisheye effect!) */
-            if (side == 0) perpWallDist = (mapX - rayPosX + (1 - stepX) / 2) / rayDirX;
-            else           perpWallDist = (mapY - rayPosY + (1 - stepY) / 2) / rayDirY;
+            /** Send the ray **/
+            RayHit hit = cast(rayDirX, rayDirY);
             
             /** Calculate height of line to draw on screen */
-            int lineHeight = (int)(VPh / perpWallDist);
+            int lineHeight = (int)(VPh / hit.distance);
             
-            /** calculate lowest and highest pixel to fill in current stripe */
+            // calculate lowest and highest pixel to fill in current stripe
             int drawStart = -lineHeight / 2 + VPh / 2;
             if(drawStart < 0)drawStart = 0;
             int drawEnd = lineHeight / 2 + VPh / 2;
             if(drawEnd >= VPh)drawEnd = VPh - 1;
             
-            int texNum = map[mapX][mapY] - 1; //0 is empty space but tex0 is defined!
             
-            //calculate value of wallX
-            double wallX; //where exactly the wall was hit
-            if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
-            else           wallX = rayPosX + perpWallDist * rayDirX;
-            wallX -= Math.floor((wallX));
-
-            //x coordinate on the texture
-            int texX = (int)(wallX * (double)texWidth);
-            if(side == 0 && rayDirX > 0) texX = texWidth - texX - 1;
-            if(side == 1 && rayDirY < 0) texX = texWidth - texX - 1;
+            /** x coordinate on the texture **/
+            int texX = (int)(hit.blockX * (double)texWidth);
+            //flip the x coordinate in some cases
+            if(hit.side == 0 && rayDirX > 0) texX = texWidth - texX - 1;
+            if(hit.side == 1 && rayDirY < 0) texX = texWidth - texX - 1;
             
+            /** draw stripe **/
             for(int y = drawStart; y<drawEnd; y++)
             {
                 int d = y * 256 - VPh * 128 + lineHeight * 128;  //256 and 128 factors to avoid floats
                 int texY = ((d * texHeight) / lineHeight) / 256;
                 if (texX < 0) texX = 0; if (texX > texWidth)  texX = texWidth;
                 if (texY < 0) texY = 0; if (texY > texHeight) texX = texHeight;
-                int colorCode = textures[texNum][texX][texY];
+                int colorCode = textures[hit.blockID - 1][texX][texY];
                 Color color = new Color(colorCode);
-                if(side == 1) color = color.darker();//(colorCode >> 1) & 8355711; //011111...
+                if(hit.side == 1) color = color.darker();//(colorCode >> 1) & 8355711; //011111...
                 img.setColorAt(x, y, color);
             }
             
@@ -275,10 +219,106 @@ public class world extends World
             //img.drawLine(x, drawStart, x, drawEnd);
         }
         
-        //set greenfoot background image //AA IS NOT WORKING !! //
-        int antiAliasingFactor = 1; //Antialiasing via scale down 'n' up
-        img.scale(VPw/antiAliasingFactor, VPh/antiAliasingFactor);
-        img.scale(VPw, VPh);
+        img.setColor(new Color(0xFFFF00FF));
+        img.drawLine(VPw/2 - 10, VPh/2, VPw/2 - 03, VPh/2);
+        img.drawLine(VPw/2 + 03, VPh/2, VPw/2 + 10, VPh/2);
+        img.drawLine(VPw/2, VPh/2 - 10, VPw/2, VPh/2 - 03);
+        img.drawLine(VPw/2, VPh/2 + 03, VPw/2, VPh/2 + 10);
+        
+        img.drawImage(weapon, VPw/2 - weapon.getWidth()/2, VPh - weapon.getHeight());
+        
         this.setBackground(img);
+    }
+    
+    private RayHit cast(double rayDirX, double rayDirY)
+    {
+        double rayPosX = posX;
+        double rayPosY = posY;
+        
+        /** which box of the map we're in */
+        int mapX = (int)rayPosX;
+        int mapY = (int)rayPosY;
+        
+        /** length of ray from current position to next x or y-side */
+        double sideDistX;
+        double sideDistY;
+        
+        /** length of ray from one x or y-side to next x or y-side */
+        double deltaDistX = Math.sqrt(1 + (rayDirY * rayDirY) / (rayDirX * rayDirX));
+        double deltaDistY = Math.sqrt(1 + (rayDirX * rayDirX) / (rayDirY * rayDirY));
+        double perpWallDist;
+        
+        /** what direction to step in x or y-direction (either +1 or -1) */
+        int stepX;
+        int stepY;
+        
+        int hit = 0; /** was there a wall hit?       */
+        int side = -1;    /** was a NS or a EW wall hit?  */
+        
+        /** calculate step and initial sideDist */
+        if (rayDirX < 0)
+        {
+            stepX = -1;
+            sideDistX = (rayPosX - mapX) * deltaDistX;
+        }
+        else
+        {
+            stepX = 1;
+            sideDistX = (mapX + 1.0 - rayPosX) * deltaDistX;
+        }
+        if (rayDirY < 0)
+        {
+            stepY = -1;
+            sideDistY = (rayPosY - mapY) * deltaDistY;
+        }
+        else
+        {
+            stepY = 1;
+            sideDistY = (mapY + 1.0 - rayPosY) * deltaDistY;
+        }
+        
+        while (hit == 0)
+        {
+            /** jump to next map square, OR in x-direction, OR in y-direction */
+            if (sideDistX < sideDistY)
+            {
+                sideDistX += deltaDistX;
+                mapX += stepX;
+                side = 0;
+            }
+            else
+            {
+                sideDistY += deltaDistY;
+                mapY += stepY;
+                side = 1;
+            }
+            //Check if ray has hit a wall
+            if (map[mapX][mapY] > 0) hit = 1;
+        } 
+        
+        if (side == -1) return null; /** ERROR */
+        
+        /** Calculate distance projected on camera direction (oblique distance will give fisheye effect!) */
+        if (side == 0) perpWallDist = (mapX - rayPosX + (1 - stepX) / 2) / rayDirX;
+        else           perpWallDist = (mapY - rayPosY + (1 - stepY) / 2) / rayDirY;
+        
+        //calculate value of wallX
+        double wallX; //where exactly the wall was hit
+        if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
+        else           wallX = rayPosX + perpWallDist * rayDirX;
+        wallX -= Math.floor((wallX));
+        
+        return new RayHit(map[mapX][mapY], side, perpWallDist, mapX, mapY, wallX);
+    }
+    
+    public class RayHit
+    {
+        public final int blockID, side, mapX, mapY;
+        public final double distance, blockX;
+        
+        public RayHit(int blockID, int side, double distance, int mapX, int mapY, double blockX)
+        {
+            this.blockX = blockX; this.side = side; this.distance = distance; this.blockID = blockID; this.mapX = mapX; this.mapY = mapY;
+        }
     }
 }

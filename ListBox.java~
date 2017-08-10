@@ -9,8 +9,6 @@ import java.awt.Point;
 import java.awt.Font;
 
 /**
- * ListBox
- * <p>
  * Collection of Objects that is displayed in a list of rows. Acts very much like an ArrayList.<p>
  * The collection's contents are shown via the Object's toString() method.<p>
  * Scrollable when list is longer than height.<p>
@@ -171,7 +169,7 @@ public class ListBox<E> extends WindowComponent
                 mouseY = (int)(lastMouse.getY() - (getY() - size.getY() / 2)) - topOfScrollBar;
             }
             
-            int n = scroller.getScroll();
+            int n = scroller.getScroll() * 100;
             if (mouseOverThis)
             {
                 scroll += n;

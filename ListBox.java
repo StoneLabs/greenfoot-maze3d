@@ -169,7 +169,7 @@ public class ListBox<E> extends WindowComponent
                 mouseY = (int)(lastMouse.getY() - (getY() - size.getY() / 2)) - topOfScrollBar;
             }
             
-            int n = scroller.getScroll();
+            int n = scroller.getScroll() * 50;
             if (mouseOverThis)
             {
                 scroll += n;

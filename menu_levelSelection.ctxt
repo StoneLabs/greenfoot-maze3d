@@ -1,6 +1,8 @@
 #BlueJ class context
-comment0.params=
-comment0.target=menu_levelSelection()
+comment0.params=str
+comment0.target=java.lang.String\ stripExtension(java.lang.String)
 comment1.params=
-comment1.target=void\ act()
-numComments=2
+comment1.target=menu_levelSelection()
+comment2.params=
+comment2.target=void\ act()
+numComments=3

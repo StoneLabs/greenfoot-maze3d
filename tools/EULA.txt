@@ -1,0 +1,33 @@
+
+INTRODUCTION
+------------
+
+This is a legal Agreement between you and Qualibyte Software ("Qualibyte") regarding a Beta version of a Qualibyte product. PLEASE READ THIS AGREEMENT CAREFULLY BEFORE ACCEPTING IT OR DECLINING IT.  You may accept the Agreement by clicking on the "ACCEPT" or "I AGREE" button displayed by the Setup program. You may decline the Agreement by clicking on the "DO NOT ACCEPT" or "CANCEL" button.
+
+IF YOU DO NOT ACCEPT THE AGREEMENT, YOU ARE NOT LEGALLY LICENSED TO USE THE BETA.
+
+IF YOU ACCEPT THE AGREEMENT, YOU AGREE TO BE LEGALLY BOUND BY ITS TERMS AND CONDITIONS.
+
+
+PROPRIETARY RIGHTS
+------------------
+
+All copyrights to the Product are exclusively owned by Qualibyte.
+
+
+GRANT OF LICENSE
+----------------
+
+Qualibyte grants to you this personal, limited, non-exclusive, non-transferable license to use one copy of the Beta. This license does not grant access to or provide any rights in source code.
+
+
+RESTRICTIONS
+------------
+
+You are prohibited from reverse engineering, decompiling, translating, disassembling, deciphering, decrypting, or otherwise attempting to discover the source code of the Qualibyte product. You may not modify, alter, adapt, port, or merge the Licensed material. Any such unauthorized use shall result in immediate and automatic termination of this license.
+
+
+LIMITATIONS ON LIABILITY
+------------------------
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT ANY GUARANTEE MADE AS TO ITS SUITABILITY OR FITNESS FOR ANY PARTICULAR USE. IN NO EVENT WILL QUALIBYTE OR ANY OTHER PARTY OR PERSON BE LIABLE TO YOU OR ANY OTHER PARTY FOR ANY DAMAGES, INCLUDING LOST PROFITS, LOST SAVINGS OR OTHER INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE QUALIBYTE PRODUCT EVEN IF QUALIBYTE OR THE OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
