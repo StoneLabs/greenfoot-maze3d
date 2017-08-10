@@ -1,10 +1,10 @@
 import greenfoot.*;
 
 /**
- * Write a description of class menu_win here.
+ * Simple win page being shown for 100 GF ticks
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Levy Ehrstein
+ * @version July 2017
  */
 public class menu_win extends World
 {

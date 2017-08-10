@@ -7,12 +7,11 @@ import java.awt.Color;
 import java.awt.Point;
 import java.io.File;
 
-
 /**
- * Write a description of class menu_main here.
+ * Main menu of the game
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Levy Ehrstein
+ * @version July 2017
  */
 public class menu_main extends World
 {

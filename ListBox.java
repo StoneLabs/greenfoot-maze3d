@@ -14,10 +14,9 @@ import java.awt.Font;
  * Scrollable when list is longer than height.<p>
  * Implements single and multi selecting.<p>
  * When has focus, can use "up" and "down" arrow keys to move selection index (when selection count equals 1) up and down through the list.<p>
- * <p>
  * Action listener: hasChanged()
  * 
- * @author Taylor Born
+ * @author Taylor Born, Levy Ehrstein
  * @version February 2011 - April 2014
  */
 public class ListBox<E> extends WindowComponent

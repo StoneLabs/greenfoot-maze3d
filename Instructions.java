@@ -1,19 +1,11 @@
 import greenfoot.*;
 
 /**
- * Write a description of class Instructions here.
+ * GUI item with texture managed by Greenfoot
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Levy Ehrstein
+ * @version July 2017
  */
 public class Instructions extends Actor
 {
-    /**
-     * Act - do whatever the Instructions wants to do. This method is called whenever
-     * the 'Act' or 'Run' button gets pressed in the environment.
-     */
-    public void act() 
-    {
-        // Add your action code here.
-    }    
 }

@@ -6,10 +6,12 @@ import java.util.Map;
 import java.util.Collections;
 
 /**
- * Write a description of class world here.
+ * Main raycasting and game logic
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * For details see publication: [todo - find document]
+ * 
+ * @author Levy Ehrstein
+ * @version July 2017
  */
 public class world extends World
 {

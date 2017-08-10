@@ -1,12 +1,12 @@
-------------------------------------------------------------------------
-This is the project README file. Here, you should describe your project.
-Tell the reader (someone who does not know anything about this project)
-all he/she needs to know. The comments should usually include at least:
-------------------------------------------------------------------------
+# WolfenMaze3D 
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-PROJECT TITLE:
-PURPOSE OF PROJECT:
-VERSION or DATE:
-HOW TO START THIS PROJECT:
-AUTHORS:
-USER INSTRUCTIONS:
+PROJECT TITLE: WolfenMaze3D
+PURPOSE OF PROJECT: A simple 3D maze game
+HOW TO START THIS PROJECT: Open the project file using Kents Greenfoot
+AUTHORS: 
+ - Game: Levy Ehrstein
+ - GUI: Original author Taylor Borns; Edited and Implemented by Levy Ehrstein
+ - Pixelformer: qualibyte
+ 
+INGAME TEXTURES TAKEN FROM WOLFENSTEIN 3D
