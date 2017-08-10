@@ -49,6 +49,7 @@ public class menu_levelEditor extends World
     {
         if (myButton.wasClicked())
         {
+            SoundManager.click.play();
             System.out.println("Selected: " + myList.getSelection());
             if (myList.getSelection().size() == 1)
                 try
@@ -57,6 +58,7 @@ public class menu_levelEditor extends World
         }
         if (myButtonBack.wasClicked())
         {
+            SoundManager.click.play();
             Greenfoot.setWorld(new menu_main());
         }
     }

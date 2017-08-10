@@ -55,12 +55,14 @@ public class menu_levelSelection extends World
     {
         if (myButton.wasClicked())
         {
+            SoundManager.click.play();
             System.out.println("Selected: " + myList.getSelection());
             if (myList.getSelection().size() == 1)
                 Greenfoot.setWorld(new world(myList.getSelection().get(0).toString()));
         }
         if (myButtonBack.wasClicked())
         {
+            SoundManager.click.play();
             Greenfoot.setWorld(new menu_main());
         }
     }

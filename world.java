@@ -151,6 +151,8 @@ public class world extends World
         if (!Greenfoot.isKeyDown("space")) weapon = weaponEase;
         if (Greenfoot.isKeyDown("space") && !lastTickSpaceDown)
         {
+            SoundManager.shot.stop();
+            SoundManager.shot.play();
             weapon = weaponAtac;
             RayHit hit = cast(dirX, dirY);
             if (hit.blockID == 7) //wood
@@ -295,6 +297,8 @@ public class world extends World
                 side = 1;
             }
             //Check if ray has hit a wall
+            if(mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
+                return new RayHit(1, 0, Double.MAX_VALUE, 0, 0, 0); //Not hit anything
             if (map[mapX][mapY] > 0) hit = 1;
         } 
         

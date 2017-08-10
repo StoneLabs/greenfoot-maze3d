@@ -6,10 +6,12 @@ import java.util.Map;
 import java.util.Collections;
 
 /**
- * Write a description of class world here.
+ * Main raycasting and game logic
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * For details see publication: [todo - find document]
+ * 
+ * @author Levy Ehrstein
+ * @version July 2017
  */
 public class world extends World
 {
@@ -21,7 +23,7 @@ public class world extends World
     public int mapHeight;
     public int mapWidth;
     
-    private double posX = 22.0, posY = 15.5;         /**X any X as the player position vector     */
+    private double posX = 1.5, posY = 1.5;         /**X any X as the player position vector     */
     private double dirX = -1.0, dirY = 0.0;          /**Rx and Ry as the players rotation vector  */
     private double planeX = 0.0, planeY = 0.66;      /**2D camera plane vector Cp                 */
     
@@ -149,6 +151,7 @@ public class world extends World
         if (!Greenfoot.isKeyDown("space")) weapon = weaponEase;
         if (Greenfoot.isKeyDown("space") && !lastTickSpaceDown)
         {
+            SoundManager.shot.play();
             weapon = weaponAtac;
             RayHit hit = cast(dirX, dirY);
             if (hit.blockID == 7) //wood
@@ -293,6 +296,8 @@ public class world extends World
                 side = 1;
             }
             //Check if ray has hit a wall
+            if(mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
+                return new RayHit(1, 0, Double.MAX_VALUE, 0, 0, 0); //Not hit anything
             if (map[mapX][mapY] > 0) hit = 1;
         } 
         

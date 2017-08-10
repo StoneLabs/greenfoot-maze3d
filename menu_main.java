@@ -28,6 +28,7 @@ public class menu_main extends World
     public menu_main()
     {    
         super(world.VPw, world.VPh, 1); 
+        SoundManager.music.playLoop();
         
         showText("MAIN MENU!", world.VPw / 2, 20);
         
@@ -45,14 +46,23 @@ public class menu_main extends World
     public void act()
     {
         if (mySelect.wasClicked())
+        {
+            SoundManager.click.play();
             Greenfoot.setWorld(new menu_levelSelection());
+        }
             
         if (myEdit.wasClicked())
+        {
+            SoundManager.click.play();
             Greenfoot.setWorld(new menu_levelEditor());
+        }
             
         if (myNew.wasClicked())
+        {
+            SoundManager.click.play();
             try
             { new ProcessBuilder("tools\\pf.exe").start(); }
             catch (Exception ex) {}
+        }
     }
 }
