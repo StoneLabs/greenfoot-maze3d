@@ -3,6 +3,8 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Collections;
 
 /**
@@ -16,10 +18,13 @@ import java.util.Collections;
 public class world extends World
 {
     public static final int VPw = 1080, VPh = 640; /** TRUE 16x9 */
-    public static final int texAmnt = 8;
-    public static final int texWidth = 64, texHeight = 64;
-    
+    public static final int texWAmnt = 8; //W: Wall; S: Sprite
+    public static final int texSAmnt = 4;
+    public static final int texWWidth = 64, texWHeight = 64;
+    public static final int texSWidth = 128, texSHeight = 128;
+        
     private int[][] map;
+    private List<Sprite> sprites = new ArrayList<Sprite>();
     public int mapHeight;
     public int mapWidth;
     
@@ -39,7 +44,9 @@ public class world extends World
     GreenfootImage weaponAtac = new GreenfootImage("textures\\weapon_shoot.png");
     
     public static final Map<Integer, Integer> wallCodes;
-    private static final int[][][] textures = new int[texAmnt][texWidth][texHeight];
+    public static final Map<Integer, Integer> spriteCodes;
+    private static final int[][][] texturesW = new int[texWAmnt][texWWidth][texWHeight];
+    private static final int[][][] texturesS = new int[texSAmnt][texSWidth][texSHeight];
     static {
         Map<Integer, Integer> tmp = new HashMap<Integer, Integer>();
         tmp.put(0xFFFFFFFF, 0x00);
@@ -53,18 +60,38 @@ public class world extends World
         tmp.put(0xFF00FF00, 0x08);
         wallCodes = Collections.unmodifiableMap(tmp);
         
+        tmp = new HashMap<Integer, Integer>();
+        tmp.put(0xFFFF3200, 0x00);
+        tmp.put(0xFFFF6400, 0x01);
+        tmp.put(0xFFFF9600, 0x02);
+        tmp.put(0xFFFFC800, 0x03);
+        spriteCodes = Collections.unmodifiableMap(tmp);
+        
         //load textures
-        for (int i = 0; i < texAmnt; i++)
+        for (int i = 0; i < texWAmnt; i++)
         {
             BufferedImage image = ImageLoader.readImage("textures\\wall_" +  (i+1) + ".jpg");
-            if (image.getHeight() != texHeight || image.getWidth() != texWidth) 
+            if (image.getHeight() != texWHeight || image.getWidth() != texWWidth) 
             {
                 System.out.println("Invalid image dimension ("+(i+1)+")!");
                 break;
             }
-            for (int x = 0; x < texWidth; x++)
-                for (int y = 0; y < texHeight; y++)
-                    textures[i][x][y] = image.getRGB(x, y);
+            for (int x = 0; x < texWWidth; x++)
+                for (int y = 0; y < texWHeight; y++)
+                    texturesW[i][x][y] = image.getRGB(x, y);
+        }
+        for (int i = 0; i < texSAmnt; i++)
+        {
+            System.out.println("textures\\sprite_" + i + ".jpg");
+            BufferedImage image = ImageLoader.readImage("textures\\sprite_" + i + ".bmp");
+            if (image.getHeight() != texSHeight || image.getWidth() != texSWidth) 
+            {
+                System.out.println("Invalid image dimension ("+(i+1)+")!");
+                break;
+            }
+            for (int x = 0; x < texSWidth; x++)
+                for (int y = 0; y < texSHeight; y++)
+                    texturesS[i][x][y] = image.getRGB(x, y);
         }
     }
     
@@ -84,8 +111,10 @@ public class world extends World
             {
                 if (level.getRGB(x, y) == 0xFFFFFF80) {posX = x + 0.5; posY = y + 0.5; map[x][y] = 0x00; continue;}
                 Integer wallCode = wallCodes.get(level.getRGB(x, y));
-                if (wallCode == null)
+                Integer spriteCode = spriteCodes.get(level.getRGB(x, y));
+                if (wallCode == null && spriteCode == null)
                     System.out.println("Invalid code: " + Integer.toHexString(level.getRGB(x, y)));
+                if (spriteCode != null) sprites.add(new Sprite (x, y, spriteCode));
                 map[x][y] = wallCode == null ? 0 : wallCode;
             }
                 
@@ -151,6 +180,7 @@ public class world extends World
         if (!Greenfoot.isKeyDown("space")) weapon = weaponEase;
         if (Greenfoot.isKeyDown("space") && !lastTickSpaceDown)
         {
+            SoundManager.shot.stop();
             SoundManager.shot.play();
             weapon = weaponAtac;
             RayHit hit = cast(dirX, dirY);
@@ -179,6 +209,7 @@ public class world extends World
         img.setColor(Color.GRAY.brighter());
         img.fillRect(0,VPh/2,VPw, VPh/2);
         
+        double[] ZBuffer = new double[VPw]; //init zbuffer
         for(int x = 0; x < VPw; x++)
         {
             /** calculate ray position and direction */
@@ -200,37 +231,130 @@ public class world extends World
             
             
             /** x coordinate on the texture **/
-            int texX = (int)(hit.blockX * (double)texWidth);
+            int texX = (int)(hit.blockX * (double)texWWidth);
             //flip the x coordinate in some cases
-            if(hit.side == 0 && rayDirX > 0) texX = texWidth - texX - 1;
-            if(hit.side == 1 && rayDirY < 0) texX = texWidth - texX - 1;
+            if(hit.side == 0 && rayDirX > 0) texX = texWWidth - texX - 1;
+            if(hit.side == 1 && rayDirY < 0) texX = texWWidth - texX - 1;
             
             /** draw stripe **/
             for(int y = drawStart; y<drawEnd; y++)
             {
                 int d = y * 256 - VPh * 128 + lineHeight * 128;  //256 and 128 factors to avoid floats
-                int texY = ((d * texHeight) / lineHeight) / 256;
-                if (texX < 0) texX = 0; if (texX > texWidth)  texX = texWidth;
-                if (texY < 0) texY = 0; if (texY > texHeight) texX = texHeight;
-                int colorCode = textures[hit.blockID - 1][texX][texY];
+                int texY = ((d * texWHeight) / lineHeight) / 256;
+                if (texX < 0) texX = 0; if (texX > texWWidth)  texX = texWWidth;
+                if (texY < 0) texY = 0; if (texY > texWHeight) texX = texWHeight;
+                int colorCode = texturesW[hit.blockID - 1][texX][texY];
                 Color color = new Color(colorCode);
                 if(hit.side == 1) color = color.darker();//(colorCode >> 1) & 8355711; //011111...
                 img.setColorAt(x, y, color);
             }
             
-            //draw the pixels of the stripe as a vertical line
-            //img.drawLine(x, drawStart, x, drawEnd);
+            //set the depth buffer (ZBUFFER)
+            ZBuffer[x] = hit.distance; //perpendicular distance is used
         }
         
+        int[] spriteOrder = new int[sprites.size()];
+        double[] spriteDistance = new double[sprites.size()];
+        for(int i = 0; i < sprites.size(); i++)
+        {
+          spriteOrder[i] = i;
+          spriteDistance[i] = ((posX - sprites.get(i).x) * //add 0.5 so the sprite is in the center of the block
+                               (posX - sprites.get(i).x) + 
+                               (posY - sprites.get(i).y) * 
+                               (posY - sprites.get(i).y)); //sqrt(x) ~~ x => sqrt is not needed for sorting by distance
+        }
+        spriteOrder = combSort(spriteOrder, spriteDistance);
+            
+        /** SPRITES **/ 
+        //after sorting the sprites, do the projection and draw them
+        for(int i = 0; i < sprites.size(); i++)
+        {
+            //translate sprite position to relative to camera
+            double spriteX = sprites.get(spriteOrder[i]).x - posX + 0.5; //offset by 0.5
+            double spriteY = sprites.get(spriteOrder[i]).y - posY + 0.5; //to center sprite
+            
+            //transform sprite with the inverse camera matrix
+            // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+            // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+            // [ planeY   dirY ]                                          [ -planeY  planeX ]
+            double invDet = 1.0 / (planeX * dirY - dirX * planeY); //required for correct matrix multiplication
+            
+            double transformX = invDet * (dirY * spriteX - dirX * spriteY);
+            double transformY = invDet * (-planeY * spriteX + planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+            
+            int spriteScreenX = (int)((VPw / 2) * (1 + transformX / transformY));
+            
+            //calculate height of the sprite on screen
+            int spriteHeight = Math.abs((int)(VPh / (transformY))); //using "transformY" instead of the real distance prevents fisheye
+            //calculate lowest and highest pixel to fill in current stripe
+            int drawStartY = -spriteHeight / 2 + VPh / 2;
+            if(drawStartY < 0) drawStartY = 0;
+            int drawEndY = spriteHeight / 2 + VPh / 2;
+            if(drawEndY >= VPh) drawEndY = VPh - 1;
+            
+            //calculate width of the sprite
+            int spriteWidth = Math.abs( (int)(VPh / (transformY)));
+            int drawStartX = -spriteWidth / 2 + spriteScreenX;
+            if(drawStartX < 0) drawStartX = 0;
+            int drawEndX = spriteWidth / 2 + spriteScreenX;
+            if(drawEndX >= VPw) drawEndX = VPw - 1;
+            
+            //loop through every vertical stripe of the sprite on screen
+            for(int stripe = drawStartX; stripe < drawEndX; stripe++)
+            {
+                int texX = (int)(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * texSWidth / spriteWidth) / 256;
+                //the conditions in the if are:
+                //1) it's in front of camera plane so you don't see things behind you
+                //2) it's on the screen (left)
+                //3) it's on the screen (right)
+                //4) ZBuffer, with perpendicular distance
+                if(transformY > 0.01 && stripe > 0 && stripe < VPw && transformY < ZBuffer[stripe]) //transformY > 0 causes fp errors
+                    for(int y = drawStartY; y < drawEndY; y++) //for every pixel of the current stripe
+                    {
+                        int d = (y) * 256 - VPh * 128 + spriteHeight * 128; //256 and 128 factors to avoid floats
+                        int texY = ((d * texSHeight) / spriteHeight) / 256;
+                        try
+                        {
+                            int colorCode = texturesS[sprites.get(spriteOrder[i]).texID][texX][texY];
+                            Color color = new Color(colorCode);
+                            if(colorCode != 0xFFFF00FF) img.setColorAt(stripe, y, color); //paint pixel if it isn't black, black is the invisible color
+                        }
+                        catch(Exception ex) {
+                        System.out.println(texX+"x"+texY+"@"+sprites.get(spriteOrder[i]).texID + " (" + stripe + ";" + spriteWidth + ";" + spriteScreenX + ";" + transformY + ")");}
+                    }
+            }
+        }
+        
+        /** Draw crosshair **/
         img.setColor(new Color(0xFFFF00FF));
         img.drawLine(VPw/2 - 10, VPh/2, VPw/2 - 03, VPh/2);
         img.drawLine(VPw/2 + 03, VPh/2, VPw/2 + 10, VPh/2);
         img.drawLine(VPw/2, VPh/2 - 10, VPw/2, VPh/2 - 03);
         img.drawLine(VPw/2, VPh/2 + 03, VPw/2, VPh/2 + 10);
         
+        /** Draw weapon **/
         img.drawImage(weapon, VPw/2 - weapon.getWidth()/2, VPh - weapon.getHeight());
         
-        this.setBackground(img);
+        this.setBackground(img); //render
+    }
+    
+    private int[] combSort(int[] order, double[] dist) /** Sorting algorithm **/
+    {
+        for ( int index = 1; index < dist.length; ) 
+        { 
+             if ( dist[index - 1] >= dist[index] ) 
+                ++index; 
+             else 
+             { 
+                double tmpDist = dist[index]; dist[index] = dist[index - 1]; dist[index - 1] = tmpDist;
+                int tmpOrder = order[index]; order[index] = order[index - 1]; order[index - 1] = tmpOrder;
+                
+                --index; 
+                if ( index == 0 )
+                   index = 1; 
+             } 
+        }
+        return order;
     }
     
     private RayHit cast(double rayDirX, double rayDirY)
@@ -325,5 +449,10 @@ public class world extends World
         {
             this.blockX = blockX; this.side = side; this.distance = distance; this.blockID = blockID; this.mapX = mapX; this.mapY = mapY;
         }
+    }
+    public class Sprite
+    {
+        public final int x, y, texID;
+        public Sprite(int x, int y, int texID) { this.x = x; this.y = y; this.texID = texID; }
     }
 }
