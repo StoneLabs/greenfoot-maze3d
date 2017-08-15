@@ -19,7 +19,7 @@ public class world extends World
 {
     public static final int VPw = 1080, VPh = 640; /** TRUE 16x9 */
     public static final int texWAmnt = 8; //W: Wall; S: Sprite
-    public static final int texSAmnt = 4;
+    public static final int texSAmnt = 6;
     public static final int texWWidth = 64, texWHeight = 64;
     public static final int texSWidth = 128, texSHeight = 128;
         
@@ -36,8 +36,9 @@ public class world extends World
     private double rotSpeed = 1;
     
     private final String level;
-    
     private long oldTime = 0;
+    
+    private float health = 100.0f;
     
     GreenfootImage weapon = new GreenfootImage("textures\\weapon.png");
     GreenfootImage weaponEase = new GreenfootImage("textures\\weapon.png");
@@ -45,6 +46,7 @@ public class world extends World
     
     public static final Map<Integer, Integer> wallCodes;
     public static final Map<Integer, Integer> spriteCodes;
+    public static final int enemyCode = 0xFFFF0000; 
     private static final int[][][] texturesW = new int[texWAmnt][texWWidth][texWHeight];
     private static final int[][][] texturesS = new int[texSAmnt][texSWidth][texSHeight];
     static {
@@ -61,10 +63,10 @@ public class world extends World
         wallCodes = Collections.unmodifiableMap(tmp);
         
         tmp = new HashMap<Integer, Integer>();
-        tmp.put(0xFFFF3200, 0x00);
-        tmp.put(0xFFFF6400, 0x01);
-        tmp.put(0xFFFF9600, 0x02);
-        tmp.put(0xFFFFC800, 0x03);
+        tmp.put(0xFFFF3200, 0x02); //00 and 01 are the enemy textures
+        tmp.put(0xFFFF6400, 0x03);
+        tmp.put(0xFFFF9600, 0x04);
+        tmp.put(0xFFFFC800, 0x05);
         spriteCodes = Collections.unmodifiableMap(tmp);
         
         //load textures
@@ -82,7 +84,6 @@ public class world extends World
         }
         for (int i = 0; i < texSAmnt; i++)
         {
-            System.out.println("textures\\sprite_" + i + ".jpg");
             BufferedImage image = ImageLoader.readImage("textures\\sprite_" + i + ".bmp");
             if (image.getHeight() != texSHeight || image.getWidth() != texSWidth) 
             {
@@ -112,9 +113,10 @@ public class world extends World
                 if (level.getRGB(x, y) == 0xFFFFFF80) {posX = x + 0.5; posY = y + 0.5; map[x][y] = 0x00; continue;}
                 Integer wallCode = wallCodes.get(level.getRGB(x, y));
                 Integer spriteCode = spriteCodes.get(level.getRGB(x, y));
-                if (wallCode == null && spriteCode == null)
+                if (wallCode == null && spriteCode == null && level.getRGB(x, y) != enemyCode)
                     System.out.println("Invalid code: " + Integer.toHexString(level.getRGB(x, y)));
-                if (spriteCode != null) sprites.add(new Sprite (x, y, spriteCode));
+                if (spriteCode != null) sprites.add(new Sprite (x + 0.5, y + 0.5, spriteCode));
+                if (level.getRGB(x, y) == enemyCode) sprites.add(new Enemy (x + 0.5, y + 0.5, 0));
                 map[x][y] = wallCode == null ? 0 : wallCode;
             }
                 
@@ -183,19 +185,26 @@ public class world extends World
             SoundManager.shot.stop();
             SoundManager.shot.play();
             weapon = weaponAtac;
-            RayHit hit = cast(dirX, dirY);
+            RayHit hit = cast(posX, posY, dirX, dirY);
             if (hit.blockID == 7) //wood
                 map[hit.mapX][hit.mapY] = 0;
+            for (Sprite sprite : hit.hitSprites)
+                if (sprite instanceof Enemy) sprites.remove(sprite);
         }
         lastTickSpaceDown = Greenfoot.isKeyDown("space");
         
         if (Greenfoot.isKeyDown("escape")) Greenfoot.setWorld(new menu_main());
-        
         if (map[(int)posX][(int)posY] == 8) Greenfoot.setWorld(new menu_win());
+        
+        for (Sprite sprite : sprites)
+            sprite.update(dTime);
+            
+        if (health < 0) Greenfoot.setWorld(new world(level));
         
         render();
         showText("FPS/UPS: "+fps, 75, 30);
         showText("Level: "+level, 75, 50);
+        showText("HEALTH: "+(int)health, VPw / 2, VPh - 30);
     }
     
     public void render()
@@ -218,7 +227,7 @@ public class world extends World
             double rayDirY = dirY + planeY * cameraX;
             
             /** Send the ray **/
-            RayHit hit = cast(rayDirX, rayDirY);
+            RayHit hit = cast(posX, posY, rayDirX, rayDirY);
             
             /** Calculate height of line to draw on screen */
             int lineHeight = (int)(VPh / hit.distance);
@@ -270,8 +279,8 @@ public class world extends World
         for(int i = 0; i < sprites.size(); i++)
         {
             //translate sprite position to relative to camera
-            double spriteX = sprites.get(spriteOrder[i]).x - posX + 0.5; //offset by 0.5
-            double spriteY = sprites.get(spriteOrder[i]).y - posY + 0.5; //to center sprite
+            double spriteX = sprites.get(spriteOrder[i]).x - posX; //offset by 0.5
+            double spriteY = sprites.get(spriteOrder[i]).y - posY; //to center sprite
             
             //transform sprite with the inverse camera matrix
             // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -357,10 +366,10 @@ public class world extends World
         return order;
     }
     
-    private RayHit cast(double rayDirX, double rayDirY)
+    private RayHit cast(double startX, double startY, double rayDirX, double rayDirY)
     {
-        double rayPosX = posX;
-        double rayPosY = posY;
+        double rayPosX = startX;
+        double rayPosY = startY;
         
         /** which box of the map we're in */
         int mapX = (int)rayPosX;
@@ -421,7 +430,8 @@ public class world extends World
             }
             //Check if ray has hit a wall
             if(mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
-                return new RayHit(1, 0, Double.MAX_VALUE, 0, 0, 0); //Not hit anything
+                return new RayHit(1, 0, Double.MAX_VALUE, 0, 0, 0, null); //Not hit anything
+                                
             if (map[mapX][mapY] > 0) hit = 1;
         } 
         
@@ -436,23 +446,196 @@ public class world extends World
         if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
         else           wallX = rayPosX + perpWallDist * rayDirX;
         wallX -= Math.floor((wallX));
+                
+        List<Sprite> hitSprites = new ArrayList<Sprite>();
+        for (Sprite sprite : sprites)
+            if (distanceSegmentPoint(sprite.x, sprite.y, startX, startY, side == 0 ? mapX : mapX + wallX, side == 0 ? mapY + wallX : mapY) < 0.15)
+                hitSprites.add(sprite);
         
-        return new RayHit(map[mapX][mapY], side, perpWallDist, mapX, mapY, wallX);
+        return new RayHit(map[mapX][mapY], side, perpWallDist, mapX, mapY, wallX, hitSprites);
+    }
+    
+    private double distanceSegmentPoint(double cx, double cy, double ax, double ay, double bx, double by)
+    {
+    /*
+        Let the point be C (Cx,Cy) and the line be AB (Ax,Ay) to (Bx,By).
+        Let P be the point of perpendicular projection of C on AB.  The parameter
+        r, which indicates P's position along AB, is computed by the dot product 
+        of AC and AB divided by the square of the length of AB:
+        
+        (1)     AC dot AB
+            r = ---------  
+                ||AB||^2
+        
+        r has the following meaning:
+        
+            r=0      P = A
+            r=1      P = B
+            r<0      P is on the backward extension of AB
+            r>1      P is on the forward extension of AB
+            0<r<1    P is interior to AB
+        
+        The length of a line segment in d dimensions, AB is computed by:
+        
+            L = sqrt( (Bx-Ax)^2 + (By-Ay)^2 + ... + (Bd-Ad)^2)
+    
+        so in 2D:   
+        
+            L = sqrt( (Bx-Ax)^2 + (By-Ay)^2 )
+        
+        and the dot product of two vectors in d dimensions, U dot V is computed:
+        
+            D = (Ux * Vx) + (Uy * Vy) + ... + (Ud * Vd)
+        
+        so in 2D:   
+        
+            D = (Ux * Vx) + (Uy * Vy) 
+        
+        So (1) expands to:
+        
+                (Cx-Ax)(Bx-Ax) + (Cy-Ay)(By-Ay)
+            r = -------------------------------
+                              L^2
+    
+        The point P can then be found:
+    
+            Px = Ax + r(Bx-Ax)
+            Py = Ay + r(By-Ay)
+    
+        And the distance from A to P = r*L.
+    
+        Use another parameter s to indicate the location along PC, with the 
+        following meaning:
+               s<0      C is left of AB
+               s>0      C is right of AB
+               s=0      C is on AB
+    
+        Compute s as follows:
+    
+                (Ay-Cy)(Bx-Ax)-(Ax-Cx)(By-Ay)
+            s = -----------------------------
+                            L^2
+    
+    
+        Then the distance from C to P = |s|*L.
+    
+    */
+    
+    
+    	double r_numerator = (cx-ax)*(bx-ax) + (cy-ay)*(by-ay);
+    	double r_denomenator = (bx-ax)*(bx-ax) + (by-ay)*(by-ay);
+    	double r = r_numerator / r_denomenator;
+    
+        double px = ax + r*(bx-ax);
+        double py = ay + r*(by-ay);
+    
+        double s =  ((ay-cy)*(bx-ax)-(ax-cx)*(by-ay) ) / r_denomenator;
+    
+    	double distanceLine = Math.abs(s)*Math.sqrt(r_denomenator);
+    
+    //
+    // (xx,yy) is the point on the lineSegment closest to (cx,cy)
+    //
+    	double xx = px;
+    	double yy = py;
+    	double distanceSegment;
+    	if ( (r >= 0) && (r <= 1) )
+    	{
+    		distanceSegment = distanceLine;
+    	}
+    	else
+    	{
+    
+    		double dist1 = (cx-ax)*(cx-ax) + (cy-ay)*(cy-ay);
+    		double dist2 = (cx-bx)*(cx-bx) + (cy-by)*(cy-by);
+    		if (dist1 < dist2)
+    		{
+    			xx = ax;
+    			yy = ay;
+    			distanceSegment = Math.sqrt(dist1);
+    		}
+    		else
+    		{
+    			xx = bx;
+    			yy = by;
+    			distanceSegment = Math.sqrt(dist2);
+    		}
+    
+    
+    	}
+    
+    	return distanceSegment;
+    }
+    private double distance(double x1, double y1, double x2, double y2)
+    {
+        return Math.sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+    }
+    private boolean deltaPropability(double dTime, double EPS) //EPS: Events per second
+    {
+        double probability = dTime / 1000000000 * EPS;
+        if (Math.random() < probability)
+            return true;
+        return false;
+    }
+    private boolean propability(double probability) //1.0 = 100%
+    {
+        if (Math.random() < probability)
+            return true;
+        return false;
     }
     
     public class RayHit
     {
         public final int blockID, side, mapX, mapY;
         public final double distance, blockX;
+        public List<Sprite> hitSprites;
         
-        public RayHit(int blockID, int side, double distance, int mapX, int mapY, double blockX)
+        public RayHit(int blockID, int side, double distance, int mapX, int mapY, double blockX, List<Sprite> hitSprites)
         {
-            this.blockX = blockX; this.side = side; this.distance = distance; this.blockID = blockID; this.mapX = mapX; this.mapY = mapY;
+            this.blockX = blockX; this.side = side; this.distance = distance; this.blockID = blockID; this.mapX = mapX; this.mapY = mapY; this.hitSprites = hitSprites;
         }
     }
     public class Sprite
     {
-        public final int x, y, texID;
-        public Sprite(int x, int y, int texID) { this.x = x; this.y = y; this.texID = texID; }
+        public double x, y;
+        public int texID;
+        
+        public Sprite(double x, double y, int texID) { this.x = x; this.y = y; this.texID = texID; }
+        
+        public void update(double dTime) 
+        {
+        }
+    }
+    public class Enemy extends Sprite
+    {
+        public Enemy(double x, double y, int texID) { super(x, y, texID); }
+        
+        private double deltaCounter = 0;
+        @Override
+        public void update(double dTime)
+        {
+            deltaCounter += dTime;
+            
+            /** Send the ray **/
+            double distance = distance(x, y, posX, posY);
+            RayHit hit = cast(x, y, (posX - x) / distance, (posY - y) / distance);
+            
+            /** Check if in sight **/
+            boolean inSight = hit.distance > distance;
+            
+            if (inSight && deltaPropability(dTime, 1.0)) //delta Time dependent randomness
+            {
+                deltaCounter = 0;
+                this.texID = 1;
+               
+                SoundManager.shot.stop();
+                SoundManager.shot.play();
+                if (propability(0.7))
+                    health -= Math.random() * 20;
+            }
+            
+            if (deltaCounter > 0.1E9) //500ms
+                this.texID = 0;
+        }
     }
 }
